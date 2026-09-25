@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="1.Core/ProAspNetCore9.Session02.ApplicationServices/ProAspNetCore9.Session02.ApplicationServices.csproj" />
+  <Project Path="1.Core/ProAspNetCore9.Session02.Domain/ProAspNetCore9.Session02.Domain.csproj" />
+  <Project Path="2.Infrastructure/ProAspNetCore9.Session02.Infrastructure.Data.EF.SqlServer/ProAspNetCore9.Session02.Infrastructure.Data.EF.SqlServer.csproj" />
+  <Project Path="3.Endpoint/ProAspNetCore9.Session02.Endpoint/ProAspNetCore9.Session02.Endpoint.csproj" />
+</Solution>
