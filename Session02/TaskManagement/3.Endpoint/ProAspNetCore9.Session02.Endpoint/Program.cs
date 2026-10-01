@@ -29,9 +29,6 @@ app.Run(async (context) =>
     {
         DateTime? createdDate = null;
         DateTime? dueDate = null;
-
-
-
         if (context.Request.Query.TryGetValue("createdDate", out var createdDateValue))
         {
             if (DateTime.TryParse(createdDateValue.ToString(), out var parsedCreatedDate))
@@ -81,8 +78,50 @@ app.Run(async (context) =>
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(tasks);
 
+        return;
+
     }
 
+    if (context.Request.Method == "GET")
+    {
+        var segments = context.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments is { Length: 2 } && segments[0] == "tasks")
+        {
+            if (!int.TryParse(segments[1], out var id))
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Task id is invalid."
+                });
+
+                return;
+            }
+            var taskAppService = context.RequestServices.GetRequiredService<TaskAppService>();
+            var task = await taskAppService.GetByIdAsync(id, context.RequestAborted);
+
+            if (task == null)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Task not found."
+                });
+
+                return;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(task);
+
+            return;
+        }
+    }
 });
 
 app.Run();
