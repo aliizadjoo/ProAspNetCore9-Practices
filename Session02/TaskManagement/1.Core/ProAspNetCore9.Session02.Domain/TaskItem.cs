@@ -4,7 +4,7 @@ public class TaskItem
     {
     }
 
-    private TaskItem(string title, string? description, DateTime dueDate)
+    private TaskItem(string title, string? description, DateTime? dueDate)
     {
         SetTitle(title);
         Description = description;
@@ -21,7 +21,7 @@ public class TaskItem
 
     public DateTime CreatedAt { get; private set; }
 
-    public DateTime DueDate { get; private set; }
+    public DateTime? DueDate { get; private set; }
 
     public TaskItemStatus Status { get; private set; }
 
@@ -30,9 +30,10 @@ public class TaskItem
     public bool IsOverdue =>
         !IsDeleted &&
         Status == TaskItemStatus.New &&
-        DueDate < DateTime.UtcNow;
+        DueDate.HasValue &&
+        DueDate.Value < DateTime.UtcNow;
 
-    public static TaskItem Create(string title, DateTime dueDate, string? description = null)
+    public static TaskItem Create(string title, DateTime? dueDate, string? description = null)
     {
         return new TaskItem(title, description, dueDate);
     }
@@ -55,7 +56,7 @@ public class TaskItem
         Description = description;
     }
 
-    public void SetDueDate(DateTime dueDate)
+    public void SetDueDate(DateTime? dueDate)
     {
         EnsureNotDeleted();
         DueDate = dueDate;

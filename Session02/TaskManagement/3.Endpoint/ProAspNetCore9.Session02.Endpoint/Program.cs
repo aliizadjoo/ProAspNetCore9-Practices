@@ -15,8 +15,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "Connection string 'TaskManagement' was not found in configuration.");
 }
 
-builder.Services.AddDbContext<TaskManagementDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<TaskManagementDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<TaskAppService>();
 
@@ -122,6 +121,81 @@ app.Run(async (context) =>
             return;
         }
     }
+
+    if (context.Request.Method == "POST" && context.Request.Path == "/tasks")
+    {
+        //همین سه مرحله بخش دستی Model Binding ما هستند: Request.Body یک Stream است، با StreamReader خوانده می‌شود و متن JSON با JsonSerializer.Deserialize به مدل تبدیل می‌شود.
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync();
+        CreateTaskRequest? createTaskRequest;
+        try
+        {
+            createTaskRequest = JsonSerializer.Deserialize<CreateTaskRequest>(body);
+        }
+        catch (JsonException)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "Request body contains invalid JSON."
+            });
+            return;
+        }
+
+        if (createTaskRequest == null)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "Request body cannot be null."
+            });
+
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(createTaskRequest.Title))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "Title is required."
+            });
+            return;
+        }
+
+        var taskAppService = context.RequestServices.GetRequiredService<TaskAppService>();
+        try
+        {
+            var taskResult = await taskAppService.CreateAsync(createTaskRequest.Title, createTaskRequest.DueDate, createTaskRequest.Description, context.RequestAborted);
+
+            context.Response.StatusCode = StatusCodes.Status201Created;
+            context.Response.ContentType = "application/json";
+            context.Response.Headers["Location"] =
+             $"/tasks/{taskResult.Data.Id}";
+
+            await context.Response.WriteAsJsonAsync(taskResult.Data);
+            return;
+
+
+        }
+        catch (InvalidOperationException)
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = "An error occurred while creating the task."
+            });
+
+            return;
+
+        }
+    }
 });
+
+
 
 app.Run();

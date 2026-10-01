@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProAspNetCore9.Session02.Infrastructure.Data.EF.SqlServer.Data;
 
@@ -11,9 +12,11 @@ using ProAspNetCore9.Session02.Infrastructure.Data.EF.SqlServer.Data;
 namespace ProAspNetCore9.Session02.Infrastructure.Data.EF.SqlServer.Migrations
 {
     [DbContext(typeof(TaskManagementDbContext))]
-    partial class TaskManagementDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001153429_MakeDueDateNullable")]
+    partial class MakeDueDateNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

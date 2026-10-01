@@ -14,7 +14,7 @@ public class TaskAppService
 
     public async Task<Result<TaskItem>> CreateAsync(
         string title,
-        DateTime dueDate,
+        DateTime? dueDate,
         string? description,
         CancellationToken cancellationToken)
     {
