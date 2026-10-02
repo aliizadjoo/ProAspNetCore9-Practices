@@ -170,14 +170,30 @@ app.Run(async (context) =>
         var taskAppService = context.RequestServices.GetRequiredService<TaskAppService>();
         try
         {
-            var taskResult = await taskAppService.CreateAsync(createTaskRequest.Title, createTaskRequest.DueDate, createTaskRequest.Description, context.RequestAborted);
+            var taskResult = await taskAppService.CreateAsync(createTaskRequest.Title,createTaskRequest.DueDate,createTaskRequest.Description,context.RequestAborted);
+    
+            var createdTask = taskResult.Data;
+
+            if (createdTask is null)
+            {
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Created task data was not returned."
+                });
+
+                return;
+            }
 
             context.Response.StatusCode = StatusCodes.Status201Created;
             context.Response.ContentType = "application/json";
             context.Response.Headers["Location"] =
-             $"/tasks/{taskResult.Data.Id}";
+                $"/tasks/{createdTask.Id}";
 
-            await context.Response.WriteAsJsonAsync(taskResult.Data);
+            await context.Response.WriteAsJsonAsync(createdTask);
+
             return;
 
 
@@ -258,42 +274,42 @@ app.Run(async (context) =>
 
             var taskAppService = context.RequestServices.GetRequiredService<TaskAppService>();
 
-           var resultTaskItem=await taskAppService.EditAsync(id , updateTaskRequest.Title , updateTaskRequest.Description , updateTaskRequest.DueDate , updateTaskRequest.Status , context.RequestAborted );
-           if (resultTaskItem.Status==ResultStatus.NotFound)
-           {
-                  context.Response.StatusCode = StatusCodes.Status404NotFound;
-                  context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new
+            var resultTaskItem = await taskAppService.EditAsync(id, updateTaskRequest.Title, updateTaskRequest.Description, updateTaskRequest.DueDate, updateTaskRequest.Status, context.RequestAborted);
+            if (resultTaskItem.Status == ResultStatus.NotFound)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
                 {
                     message = "Task not found."
                 });
 
                 return;
-           }
+            }
 
-            if (resultTaskItem.Status==ResultStatus.Success)
-           {
-                  context.Response.StatusCode = StatusCodes.Status200OK;
-                  context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new
+            if (resultTaskItem.Status == ResultStatus.Success)
+            {
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
                 {
                     message = "The edit was successful."
                 });
 
                 return;
-           }
+            }
 
-               if (resultTaskItem.Status==ResultStatus.NoChange)
-           {
-                  context.Response.StatusCode = StatusCodes.Status200OK;
-                  context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new
+            if (resultTaskItem.Status == ResultStatus.NoChange)
+            {
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
                 {
                     message = "No changes were made."
                 });
 
                 return;
-           }
+            }
 
 
         }
