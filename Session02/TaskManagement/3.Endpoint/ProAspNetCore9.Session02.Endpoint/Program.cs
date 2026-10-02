@@ -1,6 +1,8 @@
-﻿using System.Text.Json;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ProAspNetCore9.Session02.ApplicationServices.Contracts;
+using ProAspNetCore9.Session02.ApplicationServices.Results;
 using ProAspNetCore9.Session02.ApplicationServices.Services;
 using ProAspNetCore9.Session02.Endpoint;
 using ProAspNetCore9.Session02.Infrastructure.Data.EF.SqlServer.Data;
@@ -194,7 +196,116 @@ app.Run(async (context) =>
 
         }
     }
+
+    if (context.Request.Method == "PUT")
+    {
+
+        var segments = context.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments is { Length: 2 } && segments[0] == "tasks")
+        {
+            if (!int.TryParse(segments[1], out var id))
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "task id is invalid"
+                });
+
+                return;
+            }
+
+            using var reader = new StreamReader(context.Request.Body);
+
+            var body = await reader.ReadToEndAsync();
+
+            UpdateTaskRequest? updateTaskRequest;
+
+            try
+            {
+                updateTaskRequest = JsonSerializer.Deserialize<UpdateTaskRequest>(body);
+            }
+            catch (JsonException)
+            {
+
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Request body contains invalid JSON."
+                });
+
+
+                return;
+
+            }
+            if (updateTaskRequest is null)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Request body cannot be null."
+                });
+
+                return;
+            }
+
+            var taskAppService = context.RequestServices.GetRequiredService<TaskAppService>();
+
+           var resultTaskItem=await taskAppService.EditAsync(id , updateTaskRequest.Title , updateTaskRequest.Description , updateTaskRequest.DueDate , updateTaskRequest.Status , context.RequestAborted );
+           if (resultTaskItem.Status==ResultStatus.NotFound)
+           {
+                  context.Response.StatusCode = StatusCodes.Status404NotFound;
+                  context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "Task not found."
+                });
+
+                return;
+           }
+
+            if (resultTaskItem.Status==ResultStatus.Success)
+           {
+                  context.Response.StatusCode = StatusCodes.Status200OK;
+                  context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "The edit was successful."
+                });
+
+                return;
+           }
+
+               if (resultTaskItem.Status==ResultStatus.NoChange)
+           {
+                  context.Response.StatusCode = StatusCodes.Status200OK;
+                  context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(new
+                {
+                    message = "No changes were made."
+                });
+
+                return;
+           }
+
+
+        }
+
+    }
+
+
+
+
 });
+
+
 
 
 

@@ -58,7 +58,7 @@ public class TaskAppService
             return new Result<TaskItem>(ResultStatus.NotFound, null);
         }
 
-        if (title is not null)
+        if (!string.IsNullOrWhiteSpace(title))
         {
             taskItem.SetTitle(title);
         }
